@@ -220,15 +220,6 @@ public class AgentController {
 		return AgentController.findBestMove(gameState, playerTurn);
 	}
 
-
-	public static MoveWrapper findMinimaxMove(GameBoardState currentState, PlayerTurn turn){
-
-		//Minimax move chosen from a list of moves
-		ObjectiveWrapper bestMove = getMinimaxMove(currentState, turn);
-
-		return new MoveWrapper(bestMove);
-	}
-
 	/**
 	 * Example method which returns the move that yields the most immediate reward
 	 * @param currentState : The current state of the game
@@ -384,19 +375,22 @@ public class AgentController {
 		return move;
 	}
 
-	public static ObjectiveWrapper getMinimaxMove(GameBoardState state, PlayerTurn player){
+	public static MoveWrapper getMinimaxMove(GameBoardState state, PlayerTurn player){
 
 		List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 
 		if(moves.isEmpty()){
 			return null;
 		}
+
 		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
-		ObjectiveWrapper move = miniMax(moves, 0, player);
+		//ObjectiveWrapper move = miniMax(moves, player);
+
+		ObjectiveWrapper move = getBestMove(state, player);
 
 		if(move == ObjectiveWrapper.NONE) return null;
 
-		return move;
+		return new MoveWrapper(move);
 	}
 	
 	/**
@@ -422,7 +416,7 @@ public class AgentController {
 		return longest;
 	}
 
-	private static ObjectiveWrapper miniMax(List<ObjectiveWrapper> moves, int depth, PlayerTurn player) {
+	private static ObjectiveWrapper miniMax(GameBoardState state, List<ObjectiveWrapper> moves, PlayerTurn player) {
 
 		if(moves.isEmpty()){
 			return ObjectiveWrapper.NONE;
@@ -430,19 +424,28 @@ public class AgentController {
 
 		ObjectiveWrapper move = moves.get(0);
 
-
 		if (player == PlayerTurn.PLAYER_ONE) {
-			int maxEval = Integer.MIN_VALUE;
+			double maxEval = Integer.MIN_VALUE;
 			for (int i = 0; i < moves.size(); i++) {
-				ObjectiveWrapper newMove = miniMax(moves, depth+1, PlayerTurn.PLAYER_TWO);
-				//if newMove is better than move. Replace move.
-				//maxEval = Math.max(move.value(), newMove.value());
+				ObjectiveWrapper thisMove = moves.get(i);
+				GameBoardState newState = getNewState(state, thisMove);
+				double eval = evaluateMove(newState);
+				if(eval > maxEval){
+					move = thisMove;
+				}
+				ObjectiveWrapper newMove = miniMax(newState, moves, PlayerTurn.PLAYER_TWO);
 				return move;
 			}
 		} else {
 			int minEval = Integer.MAX_VALUE;
 			for (int i = 0; i < moves.size(); i++) {
-				ObjectiveWrapper newMove = miniMax(moves, depth + 1, PlayerTurn.PLAYER_ONE);
+				ObjectiveWrapper thisMove = moves.get(i);
+				GameBoardState newState = getNewState(state, thisMove);
+				double eval = evaluateMove(newState);
+				if(eval < minEval){
+					move = thisMove;
+				}
+				ObjectiveWrapper newMove = miniMax(newState, moves, PlayerTurn.PLAYER_ONE);
 				//if newMove is better than move. Replace move.
 				//minEval = Math.min(move.value(), newMove.value());
 				return move;
@@ -516,8 +519,14 @@ public class AgentController {
 	 * @param state: The state of the board
 	 * @return
 	 */
-	public static double getGameEvaluation(GameBoardState state,  PlayerTurn playerTurn){	
+	public static double getGameEvaluation(GameBoardState state,  PlayerTurn playerTurn){
 		return getGameEvaluation(state, getStrategyType(state),playerTurn);
+	}
+
+	public static double evaluateMove(GameBoardState state){
+		double whiteScore = state.getWhiteCount();
+		double blackScore = state.getBlackCount();
+		return whiteScore-blackScore;
 	}
 	
 	/**
