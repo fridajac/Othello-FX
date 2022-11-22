@@ -103,7 +103,7 @@ public class AgentController {
 		this.agentOne = agentOne;
 		this.agentTwo = agentTwo;
 	}
-	
+
 	private Agent getAgent(PlayerTurn player){
 		switch(player){
 		case PLAYER_ONE:
@@ -219,7 +219,16 @@ public class AgentController {
 
 		return AgentController.findBestMove(gameState, playerTurn);
 	}
-	
+
+
+	public static MoveWrapper findMinimaxMove(GameBoardState currentState, PlayerTurn turn){
+
+		//Minimax move chosen from a list of moves
+		ObjectiveWrapper bestMove = getMinimaxMove(currentState, turn);
+
+		return new MoveWrapper(bestMove);
+	}
+
 	/**
 	 * Example method which returns the move that yields the most immediate reward
 	 * @param currentState : The current state of the game
@@ -233,6 +242,7 @@ public class AgentController {
 
 		return new MoveWrapper(bestMove);
 	}
+
 	/**
 	 * Example method which returns a random move from a list of all available moves
 	 * @param currentState : The current state of the game
@@ -373,6 +383,21 @@ public class AgentController {
 		
 		return move;
 	}
+
+	public static ObjectiveWrapper getMinimaxMove(GameBoardState state, PlayerTurn player){
+
+		List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
+
+		if(moves.isEmpty()){
+			return null;
+		}
+		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
+		ObjectiveWrapper move = miniMax(moves, 0, player);
+
+		if(move == ObjectiveWrapper.NONE) return null;
+
+		return move;
+	}
 	
 	/**
 	 * Returns the best move given a list of moves
@@ -395,6 +420,35 @@ public class AgentController {
 			}
 		}
 		return longest;
+	}
+
+	private static ObjectiveWrapper miniMax(List<ObjectiveWrapper> moves, int depth, PlayerTurn player) {
+
+		if(moves.isEmpty()){
+			return ObjectiveWrapper.NONE;
+		}
+
+		ObjectiveWrapper move = moves.get(0);
+
+
+		if (player == PlayerTurn.PLAYER_ONE) {
+			int maxEval = Integer.MIN_VALUE;
+			for (int i = 0; i < moves.size(); i++) {
+				ObjectiveWrapper newMove = miniMax(moves, depth+1, PlayerTurn.PLAYER_TWO);
+				//if newMove is better than move. Replace move.
+				//maxEval = Math.max(move.value(), newMove.value());
+				return move;
+			}
+		} else {
+			int minEval = Integer.MAX_VALUE;
+			for (int i = 0; i < moves.size(); i++) {
+				ObjectiveWrapper newMove = miniMax(moves, depth + 1, PlayerTurn.PLAYER_ONE);
+				//if newMove is better than move. Replace move.
+				//minEval = Math.min(move.value(), newMove.value());
+				return move;
+			}
+		}
+		return move;
 	}
 	
 	/**
