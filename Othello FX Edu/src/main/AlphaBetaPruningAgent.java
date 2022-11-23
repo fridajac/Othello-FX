@@ -24,16 +24,16 @@ public class AlphaBetaPruningAgent extends Agent{
 
     @Override
     public AgentMove getMove(GameBoardState gameState) {
-        return getMinimaxMove(gameState);
+        return getABPruningMove(gameState);
     }
 
-    private AgentMove getMinimaxMove(GameBoardState gameState){
+    private AgentMove getABPruningMove(GameBoardState gameState){
 
         int waitTime = UserSettings.MIN_SEARCH_TIME;
 
         ThreadManager.pause(TimeSpan.millis(waitTime));
 
-        return AgentController.getMinimaxMove(gameState, PlayerTurn.PLAYER_ONE);
+        return AgentController.getABPruningMove(gameState, PlayerTurn.PLAYER_ONE);
     }
 
 }
