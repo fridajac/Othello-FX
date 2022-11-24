@@ -54,9 +54,6 @@ public class AgentManager extends Application{
 	public void start(Stage primaryStage) {
 		//new Othello(primaryStage, new MinimaxAgent("Minimax"), new ExampleAgentTwo("Human"));
 		new Othello(primaryStage, new AlphaBetaPruningAgent("AB Pruning"), new ExampleAgentTwo("Human"));
-		//new Othello(primaryStage, new ExampleAgentB());
-		//new Othello(primaryStage, new ExampleAgentC());
-		//new Othello(primaryStage, new ExampleAgentD());
 	}
 
 	public static void main(String[] args) {

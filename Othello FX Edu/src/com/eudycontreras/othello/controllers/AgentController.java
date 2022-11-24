@@ -90,8 +90,8 @@ public class AgentController {
 	
 	private Othello othello;
 	
-	private Agent agentOne;
-	private Agent agentTwo;
+	private static Agent agentOne;
+	private static Agent agentTwo;
 
 	public AgentController(Othello othello, Agent move) {
 		this.othello = othello;
@@ -104,7 +104,7 @@ public class AgentController {
 		this.agentTwo = agentTwo;
 	}
 
-	private Agent getAgent(PlayerTurn player){
+	private static Agent getAgent(PlayerTurn player){
 		switch(player){
 		case PLAYER_ONE:
 			if(agentOne == null){
@@ -492,6 +492,8 @@ public class AgentController {
 			return ObjectiveWrapper.NONE;
 		}
 
+		Agent agent = getAgent(player);
+
 		ObjectiveWrapper bestMove = moves.get(0);
 
 		double maxEval = Integer.MIN_VALUE;
@@ -512,6 +514,9 @@ public class AgentController {
 
 	private static double abPruning(GameBoardState state, int depth, double alpha, double beta, PlayerTurn player) {
 
+		Agent agent = getAgent(player);
+		agent.setSearchDepth(depth);
+
 		if(depth == 64 || state.isTerminal()){
 			return evaluateMove(state);
 		}
@@ -520,6 +525,7 @@ public class AgentController {
 			double maxEval = Integer.MIN_VALUE;
 			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 			for (int i = 0; i < moves.size(); i++) {
+				agent.setNodesExamined(agent.getNodesExamined()+1);
 				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState newState = getNewState(state, thisMove);
 				double eval = abPruning(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
