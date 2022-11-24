@@ -344,7 +344,7 @@ public class GameBoardView extends StackPane {
 		
 		if(UserSettings.USE_ANIMATION){
 
-			ThreadTimer.schedule(TimeSpan.millis(500+(UserSettings.TURN_INTERVAL + UserSettings.MIN_SEARCH_TIME)), ()-> {
+			ThreadTimer.schedule(TimeSpan.millis(500+(UserSettings.TURN_INTERVAL + UserSettings.MIN_SEARCH_TIME) +UserSettings.MAX_SEARCH_TIME), ()-> {
 				Platform.runLater(()->{
 					othelloGame.getGameScoreView().resetScore();
 					
