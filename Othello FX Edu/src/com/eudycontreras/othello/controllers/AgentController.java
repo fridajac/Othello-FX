@@ -393,16 +393,9 @@ public class AgentController {
 	}
 
 	public static AgentMove getABPruningMove(GameBoardState state, PlayerTurn player) {
-		List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
-
-		if(moves.isEmpty()){
-			return null;
-		}
 
 		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
-		ObjectiveWrapper move = getABPruningMove(state, moves, player);
-
-		if(move == ObjectiveWrapper.NONE) return null;
+		ObjectiveWrapper move = abPruning(state, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
 
 		return new MoveWrapper(move);
 	}
@@ -458,7 +451,9 @@ public class AgentController {
 
 	private static double miniMax(GameBoardState state, int depth, PlayerTurn player) {
 
-		if(depth == 64 || state.isTerminal()){
+		int maxDepth = 64;
+
+		if(depth == maxDepth || state.isTerminal()){
 			return evaluateMove(state);
 		}
 
@@ -486,72 +481,50 @@ public class AgentController {
 		return evaluateMove(state);
 	}
 
-	private static ObjectiveWrapper getABPruningMove(GameBoardState state, List<ObjectiveWrapper> moves, PlayerTurn player) {
+	private static ObjectiveWrapper abPruning(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
 
-		if(moves.isEmpty()){
-			return ObjectiveWrapper.NONE;
+		ObjectiveWrapper bestMove = null;
+
+		if (player == PlayerTurn.PLAYER_ONE) {
+			List<ObjectiveWrapper> possibleMoves = getAvailableMoves(state, player);
+			int maxEval = Integer.MIN_VALUE;
+
+			for (int i = 0; i < possibleMoves.size(); i++) {
+				ObjectiveWrapper thisMove = possibleMoves.get(i);
+				GameBoardState newState = getNewState(state, thisMove);
+				ObjectiveWrapper move = aBPruningMove(newState, depth + 1, alpha, beta, PlayerTurn.PLAYER_TWO);
+				//hur få ut eval här?
+				if (eval > maxEval) {
+					maxEval = eval;
+					bestMove = thisMove;
+				}
+				alpha = Math.max(alpha, eval);
+
+				if (eval >= beta) {
+					return bestMove;
+				}
+			}
 		}
-
-		Agent agent = getAgent(player);
-
-		ObjectiveWrapper bestMove = moves.get(0);
-
-		double maxEval = Integer.MIN_VALUE;
-
-		for (int i = 0; i < moves.size(); i++) {
-			ObjectiveWrapper thisMove = moves.get(i);
-
-			GameBoardState newState = getNewState(state, thisMove);
-			double eval = abPruning(newState, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
-
-			if(eval > maxEval) {
-				maxEval = eval;
-				bestMove = thisMove;
+		else {
+			List<ObjectiveWrapper> possibleMoves = getAvailableMoves(state, player);
+			int minEval = Integer.MAX_VALUE;
+			for (int i = 0; i < possibleMoves.size(); i++) {
+				ObjectiveWrapper thisMove = possibleMoves.get(i);
+				GameBoardState newState = getNewState(state, thisMove);
+				ObjectiveWrapper move = aBPruningMove(newState, depth + 1, alpha, beta, PlayerTurn.PLAYER_ONE);
+				//hur få ut eval här?
+				if (eval < minEval) {
+					minEval = eval;
+					bestMove = thisMove;
+				}
+				beta = Math.min(beta, eval);
+				if(eval <= alpha) {
+					return bestMove;
+				}
 			}
 		}
 		return bestMove;
-	}
 
-	private static double abPruning(GameBoardState state, int depth, double alpha, double beta, PlayerTurn player) {
-
-		Agent agent = getAgent(player);
-		agent.setSearchDepth(depth);
-
-		if(depth == 64 || state.isTerminal()){
-			return evaluateMove(state);
-		}
-
-		if (player == PlayerTurn.PLAYER_ONE) {
-			double maxEval = Integer.MIN_VALUE;
-			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
-			for (int i = 0; i < moves.size(); i++) {
-				agent.setNodesExamined(agent.getNodesExamined()+1);
-				ObjectiveWrapper thisMove = moves.get(i);
-				GameBoardState newState = getNewState(state, thisMove);
-				double eval = abPruning(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
-				maxEval = Math.max(eval, maxEval);
-				alpha = Math.max(alpha, eval);
-				if(beta <= alpha){
-					break;
-				}
-				return maxEval;
-			}
-		} else {
-			double minEval = Integer.MAX_VALUE;
-			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
-			for (int i = 0; i < moves.size(); i++) {
-				ObjectiveWrapper thisMove = moves.get(i);
-				GameBoardState newState = getNewState(state, thisMove);
-				double eval = abPruning(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
-				minEval = Math.min(eval, minEval);
-				beta = Math.min(beta, eval);
-				if(beta <= alpha){
-					break;
-				}
-				return minEval;
-			}
-		}
-		return evaluateMove(state);
 	}
 	
 	/**
@@ -623,9 +596,9 @@ public class AgentController {
 		return getGameEvaluation(state, getStrategyType(state),playerTurn);
 	}
 
-	public static double evaluateMove(GameBoardState state){
-		double whiteScore = state.getWhiteCount();
-		double blackScore = state.getBlackCount();
+	public static int evaluateMove(GameBoardState state){
+		int whiteScore = state.getWhiteCount();
+		int blackScore = state.getBlackCount();
 		return whiteScore-blackScore;
 	}
 	
