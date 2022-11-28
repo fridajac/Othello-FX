@@ -493,6 +493,9 @@ public class AgentController {
 		Response move = new Response();
 
 		if(state.isTerminal()){
+			if(depth > agentOne.getSearchDepth()){
+				agentOne.setSearchDepth(depth);
+			}
 			int eval = getTerminalEvaluation(state);
 			move.setEval(eval);
 			return move;
@@ -502,6 +505,8 @@ public class AgentController {
 			int maxEval = Integer.MIN_VALUE;
 			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 			for (int i = 0; i < moves.size(); i++) {
+				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
+				System.out.println("new node examined");
 				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState newState = getNewState(state, thisMove);
 				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
@@ -512,7 +517,7 @@ public class AgentController {
 					response.setMove(thisMove);
 				}
 				alpha = Math.max(alpha, eval);
-				if(alpha <= beta){
+				if(eval >= beta){
 					System.out.println("pruning");
 					move.setEval(eval);
 					move.setMove(thisMove);
@@ -524,18 +529,19 @@ public class AgentController {
 			int minEval = Integer.MAX_VALUE;
 			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 			for (int i = 0; i < moves.size(); i++) {
+				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
 				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState newState = getNewState(state, thisMove);
 				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
 				int eval = response.getEval();
-				if(eval < minEval){
+				if(eval >= beta){
 					minEval = eval;
 					System.out.println("updating best move to " +thisMove);
 					response.setEval(minEval);
 					response.setMove(thisMove);
 				}
 				beta = Math.min(beta, eval);
-				if(alpha <= beta){
+				if(eval <= alpha){
 					System.out.println("pruning");
 					move.setEval(eval);
 					move.setMove(thisMove);
