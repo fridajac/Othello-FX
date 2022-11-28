@@ -502,6 +502,7 @@ public class AgentController {
 		if (player == PlayerTurn.PLAYER_ONE) {
 			int maxEval = Integer.MIN_VALUE;
 			for (int i = 0; i < newMoves.size(); i++) {
+				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
 				ObjectiveWrapper thisMove = newMoves.get(i);
 				GameBoardState thisState = getNewState(state, thisMove);
 				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
@@ -513,22 +514,22 @@ public class AgentController {
 				}
 				alpha = Math.max(alpha,eval);
 				if(eval >= beta){
-					agentOne.setSearchDepth(depth);
 					System.out.println("Pruning");
+					agentOne.setSearchDepth(depth);
+					state.setLeadingMove(thisMove);
 					break;
 				}
-				return newState;
 			}
 		} else {
 			int minEval = Integer.MAX_VALUE;
 			for (int i = 0; i < newMoves.size(); i++) {
+				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
 				ObjectiveWrapper thisMove = newMoves.get(i);
 				GameBoardState thisState = getNewState(state, thisMove);
 				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
 				int eval = (int)evaluateState(newState);
 				if(eval < minEval){
 					minEval = eval;
-					newState.setLeadingMove(thisMove);
 				}
 				beta = Math.min(beta, eval);
 				if(eval <= alpha){
@@ -536,7 +537,6 @@ public class AgentController {
 					System.out.println("Pruning");
 					break;
 				}
-				return newState;
 			}
 		}
 		return state;
