@@ -19,7 +19,6 @@ public class Response {
         this.eval = eval;
     }
 
-
     public Response(int eval, ObjectiveWrapper move) {
         this.eval = eval;
         this.move = move;

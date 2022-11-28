@@ -490,9 +490,12 @@ public class AgentController {
 
 	private static Response getABPruningMove(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
 
-		if(depth == 64 || state.isTerminal()){
+		Response move = new Response();
+
+		if(state.isTerminal()){
 			int eval = getTerminalEvaluation(state);
-			return new Response(eval);
+			move.setEval(eval);
+			return move;
 		}
 
 		if (player == PlayerTurn.PLAYER_ONE) {
@@ -505,9 +508,15 @@ public class AgentController {
 				int eval = response.getEval();
 				if(eval > maxEval) {
 					maxEval = eval;
-					System.out.println("updating best move to " +thisMove);
 					response.setEval(maxEval);
 					response.setMove(thisMove);
+				}
+				alpha = Math.max(alpha, eval);
+				if(alpha <= beta){
+					System.out.println("pruning");
+					move.setEval(eval);
+					move.setMove(thisMove);
+					break;
 				}
 				return response;
 			}
@@ -525,10 +534,17 @@ public class AgentController {
 					response.setEval(minEval);
 					response.setMove(thisMove);
 				}
+				beta = Math.min(beta, eval);
+				if(alpha <= beta){
+					System.out.println("pruning");
+					move.setEval(eval);
+					move.setMove(thisMove);
+					break;
+				}
 				return response;
 			}
 		}
-		return new Response();
+		return move;
 	}
 	
 	/**
