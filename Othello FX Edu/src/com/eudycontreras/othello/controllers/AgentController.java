@@ -393,6 +393,8 @@ public class AgentController {
 	}
 
 	public static AgentMove getABPruningMove(GameBoardState state, PlayerTurn player) {
+
+		agentOne.setSearchDepth(0);
 		List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 
 		if(moves.isEmpty()){
@@ -400,13 +402,11 @@ public class AgentController {
 		}
 
 		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
-		Response response = getABPruningMove(state,  0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
+		GameBoardState newState = ABPruning(state,  0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
 
-		ObjectiveWrapper move = response.getMove();
+		if(newState.getLeadingMove() == ObjectiveWrapper.NONE) return null;
 
-		if(move == ObjectiveWrapper.NONE) return null;
-
-		return new MoveWrapper(move);
+		return new MoveWrapper(newState.getLeadingMove());
 	}
 
 
@@ -488,63 +488,58 @@ public class AgentController {
 		return evaluateState(state);
 	}
 
-	private static Response getABPruningMove(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
+	private static GameBoardState ABPruning(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
 
-		Response move = new Response();
+		List<ObjectiveWrapper> newMoves = getAvailableMoves(state, player);
 
-		if(state.isTerminal()){
-			int eval = getTerminalEvaluation(state);
-			move.setEval(eval);
-			return move;
+		//this is leaf node
+		if(newMoves.size() == 0){
+			System.out.println("Reached root");
+			agentOne.setSearchDepth(depth);
+			return state;
 		}
 
 		if (player == PlayerTurn.PLAYER_ONE) {
 			int maxEval = Integer.MIN_VALUE;
-			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
-			for (int i = 0; i < moves.size(); i++) {
-				ObjectiveWrapper thisMove = moves.get(i);
-				GameBoardState newState = getNewState(state, thisMove);
-				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
-				int eval = response.getEval();
+			for (int i = 0; i < newMoves.size(); i++) {
+				ObjectiveWrapper thisMove = newMoves.get(i);
+				GameBoardState thisState = getNewState(state, thisMove);
+				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
+				int eval = (int)evaluateState(newState);
+
 				if(eval > maxEval) {
 					maxEval = eval;
-					response.setEval(maxEval);
-					response.setMove(thisMove);
+					newState.setLeadingMove(thisMove);
 				}
-				alpha = Math.max(alpha, eval);
-				if(alpha <= beta){
-					System.out.println("pruning");
-					move.setEval(eval);
-					move.setMove(thisMove);
+				alpha = Math.max(alpha,eval);
+				if(eval >= beta){
+					agentOne.setSearchDepth(depth);
+					System.out.println("Pruning");
 					break;
 				}
-				return response;
+				return newState;
 			}
 		} else {
 			int minEval = Integer.MAX_VALUE;
-			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
-			for (int i = 0; i < moves.size(); i++) {
-				ObjectiveWrapper thisMove = moves.get(i);
-				GameBoardState newState = getNewState(state, thisMove);
-				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
-				int eval = response.getEval();
+			for (int i = 0; i < newMoves.size(); i++) {
+				ObjectiveWrapper thisMove = newMoves.get(i);
+				GameBoardState thisState = getNewState(state, thisMove);
+				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
+				int eval = (int)evaluateState(newState);
 				if(eval < minEval){
 					minEval = eval;
-					System.out.println("updating best move to " +thisMove);
-					response.setEval(minEval);
-					response.setMove(thisMove);
+					newState.setLeadingMove(thisMove);
 				}
 				beta = Math.min(beta, eval);
-				if(alpha <= beta){
-					System.out.println("pruning");
-					move.setEval(eval);
-					move.setMove(thisMove);
+				if(eval <= alpha){
+					agentOne.setSearchDepth(depth);
+					System.out.println("Pruning");
 					break;
 				}
-				return response;
+				return newState;
 			}
 		}
-		return move;
+		return state;
 	}
 	
 	/**
