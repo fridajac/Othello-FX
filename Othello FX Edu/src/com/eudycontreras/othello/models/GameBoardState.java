@@ -51,7 +51,11 @@ public class GameBoardState {
 		this.isRoot = isRoot;
 		this.childStates = new ArrayList<>();
 	}
-	
+
+	public GameBoardState() {
+
+	}
+
 	public static GameBoardState createBoardState(GameBoardCell[][] cells){
 		return createBoardState(cells,false);
 	}

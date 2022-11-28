@@ -403,8 +403,8 @@ public class AgentController {
 
 		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
 		GameBoardState newState = ABPruning(state,  0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
-
-		if(newState.getLeadingMove() == ObjectiveWrapper.NONE) return null;
+		System.out.println("We got back: " +newState);
+		if(newState.getLeadingMove() == null) return null;
 
 		return new MoveWrapper(newState.getLeadingMove());
 	}
@@ -490,55 +490,64 @@ public class AgentController {
 
 	private static GameBoardState ABPruning(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
 
-		List<ObjectiveWrapper> newMoves = getAvailableMoves(state, player);
-
-		//this is leaf node
-		if(newMoves.size() == 0){
+		//this is true when we reach a leaf node
+		if(depth == 64 || state.isTerminal() ){
+			if(depth > agentOne.getSearchDepth()){
+				agentOne.setSearchDepth(depth);
+			}
 			System.out.println("Reached root");
-			agentOne.setSearchDepth(depth);
 			return state;
 		}
 
 		if (player == PlayerTurn.PLAYER_ONE) {
 			int maxEval = Integer.MIN_VALUE;
-			for (int i = 0; i < newMoves.size(); i++) {
-				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
-				ObjectiveWrapper thisMove = newMoves.get(i);
+			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
+			for (int i = 0; i < moves.size(); i++) {
+				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState thisState = getNewState(state, thisMove);
 				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
 				int eval = (int)evaluateState(newState);
 
 				if(eval > maxEval) {
 					maxEval = eval;
-					newState.setLeadingMove(thisMove);
+					state.setLeadingMove(thisMove);
 				}
 				alpha = Math.max(alpha,eval);
 				if(eval >= beta){
 					System.out.println("Pruning");
-					agentOne.setSearchDepth(depth);
+					if(depth > agentOne.getSearchDepth()){
+						agentOne.setSearchDepth(depth);
+					}
 					state.setLeadingMove(thisMove);
 					break;
 				}
+				return newState;
 			}
 		} else {
 			int minEval = Integer.MAX_VALUE;
-			for (int i = 0; i < newMoves.size(); i++) {
-				agentOne.setNodesExamined(agentOne.getNodesExamined()+1);
-				ObjectiveWrapper thisMove = newMoves.get(i);
+			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
+			for (int i = 0; i < moves.size(); i++) {
+				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState thisState = getNewState(state, thisMove);
 				GameBoardState newState = ABPruning(thisState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
 				int eval = (int)evaluateState(newState);
 				if(eval < minEval){
 					minEval = eval;
+					state.setLeadingMove(thisMove);
 				}
 				beta = Math.min(beta, eval);
 				if(eval <= alpha){
-					agentOne.setSearchDepth(depth);
+					if(depth > agentOne.getSearchDepth()){
+						agentOne.setSearchDepth(depth);
+					}
 					System.out.println("Pruning");
+					state.setLeadingMove(thisMove);
 					break;
 				}
+				return newState;
 			}
 		}
+
 		return state;
 	}
 	
