@@ -400,7 +400,9 @@ public class AgentController {
 		}
 
 		//this is the best possible move that we get back! This method is going recursive until it finds best move possible.
-		ObjectiveWrapper move = getABPruningMove(state, moves, player);
+		Response response = getABPruningMove(state,  0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
+
+		ObjectiveWrapper move = response.getMove();
 
 		if(move == ObjectiveWrapper.NONE) return null;
 
@@ -459,7 +461,7 @@ public class AgentController {
 	private static double miniMax(GameBoardState state, int depth, PlayerTurn player) {
 
 		if(depth == 64 || state.isTerminal()){
-			return evaluateMove(state);
+			return evaluateState(state);
 		}
 
 		if (player == PlayerTurn.PLAYER_ONE) {
@@ -483,75 +485,50 @@ public class AgentController {
 				return minEval;
 			}
 		}
-		return evaluateMove(state);
+		return evaluateState(state);
 	}
 
-	private static ObjectiveWrapper getABPruningMove(GameBoardState state, List<ObjectiveWrapper> moves, PlayerTurn player) {
-
-		if(moves.isEmpty()){
-			return ObjectiveWrapper.NONE;
-		}
-
-		Agent agent = getAgent(player);
-
-		ObjectiveWrapper bestMove = moves.get(0);
-
-		double maxEval = Integer.MIN_VALUE;
-
-		for (int i = 0; i < moves.size(); i++) {
-			ObjectiveWrapper thisMove = moves.get(i);
-
-			GameBoardState newState = getNewState(state, thisMove);
-			double eval = abPruning(newState, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, player);
-
-			if(eval > maxEval) {
-				maxEval = eval;
-				bestMove = thisMove;
-			}
-		}
-		return bestMove;
-	}
-
-	private static double abPruning(GameBoardState state, int depth, double alpha, double beta, PlayerTurn player) {
-
-		Agent agent = getAgent(player);
-		agent.setSearchDepth(depth);
+	private static Response getABPruningMove(GameBoardState state, int depth, int alpha, int beta, PlayerTurn player) {
 
 		if(depth == 64 || state.isTerminal()){
-			return evaluateMove(state);
+			int eval = getTerminalEvaluation(state);
+			return new Response(eval);
 		}
 
 		if (player == PlayerTurn.PLAYER_ONE) {
-			double maxEval = Integer.MIN_VALUE;
+			int maxEval = Integer.MIN_VALUE;
 			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 			for (int i = 0; i < moves.size(); i++) {
-				agent.setNodesExamined(agent.getNodesExamined()+1);
 				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState newState = getNewState(state, thisMove);
-				double eval = abPruning(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
-				maxEval = Math.max(eval, maxEval);
-				alpha = Math.max(alpha, eval);
-				if(beta <= alpha){
-					break;
+				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_TWO);
+				int eval = response.getEval();
+				if(eval > maxEval) {
+					maxEval = eval;
+					System.out.println("updating best move to " +thisMove);
+					response.setEval(maxEval);
+					response.setMove(thisMove);
 				}
-				return maxEval;
+				return response;
 			}
 		} else {
-			double minEval = Integer.MAX_VALUE;
+			int minEval = Integer.MAX_VALUE;
 			List<ObjectiveWrapper> moves = getAvailableMoves(state, player);
 			for (int i = 0; i < moves.size(); i++) {
 				ObjectiveWrapper thisMove = moves.get(i);
 				GameBoardState newState = getNewState(state, thisMove);
-				double eval = abPruning(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
-				minEval = Math.min(eval, minEval);
-				beta = Math.min(beta, eval);
-				if(beta <= alpha){
-					break;
+				Response response = getABPruningMove(newState, depth+1, alpha, beta, PlayerTurn.PLAYER_ONE);
+				int eval = response.getEval();
+				if(eval < minEval){
+					minEval = eval;
+					System.out.println("updating best move to " +thisMove);
+					response.setEval(minEval);
+					response.setMove(thisMove);
 				}
-				return minEval;
+				return response;
 			}
 		}
-		return evaluateMove(state);
+		return new Response();
 	}
 	
 	/**
@@ -623,7 +600,7 @@ public class AgentController {
 		return getGameEvaluation(state, getStrategyType(state),playerTurn);
 	}
 
-	public static double evaluateMove(GameBoardState state){
+	public static double evaluateState(GameBoardState state){
 		double whiteScore = state.getWhiteCount();
 		double blackScore = state.getBlackCount();
 		return whiteScore-blackScore;
